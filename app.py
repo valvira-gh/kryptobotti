@@ -10,80 +10,122 @@ def simulate_price(price: int):
 
 
 # Lasketaan prosentuaalinen muutososuus ja palautetaan kahden desimaalin tarkkuudella
-def calculate_percentage(new_price: int):
-    start_price = 1000
-    percentage = ((new_price - start_price) / start_price) * 100
-
+def calculate_percentage(price: int, new_price: int):
+    percentage = ((new_price - price) / price) * 100
     return round(percentage, 2)
 
 
-def print_stocks(stock_dict: dict):
+def print_stocks(stock_dict: dict, current_price: float):
     print(f"\nOstetut valuutat:")
-    for key, value in stock_dict.items():
-        print(f"ID: {key} -> H: ${value[0]} || %: {value[1]}%")
+    if stock_dict:
+        for key, value in stock_dict.items():
+            change = calculate_percentage(current_price, value[1])
+            print('change:', change)
+            print(f"ID: {key} -> Päivä: {value[0]} || Hinta: {value[1]} USD ({change}%)")
+            stock_dict[key] 
+    else:
+        print("Ei ostettuja valuuttoja.")
     
     return None
 
-
-def sell_stocks(stocks: dict):
-    print()
-
+def sell_stocks(stocks: dict, current_price: float):
+    if not stocks:
+        print("Ei osakkeita myytävänä.")
+        return
+    
     while True:
-        if not stocks:
-            print("Ei osakkeita myytävänä.")
-            break
-
+        print("\nMyytävissä olevat osakkeet:")
         for key, value in stocks.items():
-            print(f"ID: {key} -> Hinta: {value[0]} USD || Muutos: {value[1]}%")
-        
+            change_percentage = calculate_percentage(current_price. value[1])
+            print(f"ID: {key} -> Ostopäivä: {value[0]} || Hinta: {value[1]} USD ({change_percentage}%)")
+
         try:
-            id = int(input("Myytävän osakkeen id, 0 palataksesi: "))
+            id = int(input("Anna ID myytävästä osakkeesta, 0 palataksesi: "))
         except ValueError:
-            print("Virheellinen syöte. Anna numero kokonaislukuna.")
+            print("Virheellinen syöte. Anna numero.")
             continue
 
         if id == 0:
             break
         elif id in stocks:
-            stock = stocks.pop(id) # Poiistetaan osake myynnin jälkeen
-            print()
-            print(f"Osake myyty hintaan {stock[0]} USD ({stock[1]}%)")
-            print()
+            stock = stocks.pop(id)  # Poistetaan osake, kun se myydään
+            print(f"Osake myyty päivänä {stock[0]} hintaan {stock[1]} USD")
+            break
+        else:
+            print("Virheellinen ID. Yritä uudelleen.")
+            
+    return None
+
+def buy_stock(stocks: dict, buying_price: float, day: int):
+    print()
+    stocks[len(stocks) + 1] = (day, buying_price)
+    print(f"\tOsake ostettu päivänä {day} hintaan: {buying_price} USD")
 
     return None
 
+# Funktio, joka käsittelee käyttäjän valinnat
+def user_selection(stocks: dict, current_price: float, change_percentage: float, day: int):
+    while True:
+
+        try:
+            user_select = int(input("Vaihtoehdot:\n(1) Osta\n(2) Salkku\n(3) Myy\n(4) Nuku päivä\n(0) Lopeta: "))
+        except ValueError:
+            print("Virheellinen valinta! Anna valintasi kokonaislukuna")
+            continue  # Palaa kysymään valintaa
+
+        if user_select == 1:
+            buy_stock(stocks, current_price, day)
+            break  # Palataan pääohjelmaan
+        elif user_select == 3:
+            sell_stocks(stocks, current_price)
+            break  # Palataan pääohjelmaan
+        elif user_select == 2:
+            print_stocks(stocks, current_price)
+            break  # Palataan pääohjelmaan
+        elif user_select == 4:
+            print("Päivä nukuttu.")
+            break  # Palataan pääohjelmaan
+        elif user_select == 0:
+            print("Lopetetaan ohjelma.")
+            exit()  # Poistutaan ohjelmasta
+        else:
+            print("Virheellinen valinta, yritä uudelleen.")
+
+    return None
 
 
 ## PÄÄOHJELMA ##
 def main():
     # Muuttujat
     stock_dict = {}
-    current_price = 1000  # Valuutan alkuhinta
-    print("Simuloidaan kryptovaluutan hinnan vaihtelua. Aloitushinta on:", current_price)
+    stock_price = 1000  # Valuutan alkuhinta
+    new_stock_price = 0
+    day = 1
+    print("*** Vtoro ***")
 
     while True:
+     
         # Päivitä hinta
-        current_price = simulate_price(current_price)
-        print(f"Kryptovaluutan hinta: {current_price} USD")
+        new_stock_price = simulate_price(stock_price)
+
+        print(f"Osakkeen hinta päivälle {day}: {new_stock_price} USD")
 
         # Lasketaan prosentuaalinen muutos
-        change_percentage = calculate_percentage(current_price)
-        print(f"Prosentuaalinen muutos: {change_percentage}%")
+        change_percentage = calculate_percentage(stock_price, new_stock_price)
+        print(f"Prosentuaalinen muutos eiliseen: {change_percentage}%")
 
-        # Tallennetaan osto tupleen (current_price, change_percentage)
-        user_select = input("Haluatko (O)staa, (M)yydä tai (X) lopettaa? ").lower()
+        # Käsitellään käyttäjän valinta
+        user_selection(stock_dict, new_stock_price, change_percentage, day)
 
-        if user_select == "o":
-            stock_dict[len(stock_dict) + 1] = (current_price, change_percentage)
-            print(f"Valuutta ostettu hintaan {current_price} USD, muutos {change_percentage}%")
-        elif user_select  == "m":
-            sell_stocks(stock_dict)
-        elif user_select == "p":
-            print_stocks(stock_dict)
-        elif user_select == "x":
-            break
+        # Päivitä uusi hinta
+        stock_price = new_stock_price
+
+
+        # Siirrytään seuraavaan päivään
+        day += 1
 
         # Odota ennen seuraavaa päivitystä
+        time.sleep(0.5)
         print("\n" + "#" * 10 + "\n")
 
 if __name__ == "__main__":
